@@ -16,50 +16,63 @@ class OrderController extends Controller
     /**
      * Display a listing of client orders
      */
-    public function clientOrders()
-    {
-        // Check if user is logged in
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        $orders = Order::where('client_id', Auth::id())
-                       ->with(['basket', 'driver'])
-                       ->latest()
-                       ->paginate(10);
-        
-        return view('client.orders.index', compact('orders'));
+   public function clientOrders()
+{
+    if (!Auth::check()) {
+        return redirect()->route('login');
     }
+
+    $orders = Order::where('client_id', Auth::id())
+                   ->with(['basket', 'driver'])
+                   ->latest()
+                   ->paginate(10);
+    
+    // Decode special_items for each order
+    foreach ($orders as $order) {
+        if (is_string($order->special_items)) {
+            $order->special_items = json_decode($order->special_items, true) ?? [];
+        }
+        if (!is_array($order->special_items)) {
+            $order->special_items = [];
+        }
+    }
+    
+    return view('client.orders.index', compact('orders'));
+}
 
     /**
      * Display the specified order
      */
     public function show(Order $order)
-    {
-        // Check if user is logged in
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        // Check if order belongs to authenticated user
-        if ($order->client_id !== Auth::id() && Auth::user()->role !== 'admin') {
-            abort(403, 'Unauthorized access.');
-        }
-        
-        return view('client.orders.show', compact('order'));
+{
+    if (!Auth::check()) {
+        return redirect()->route('login');
     }
+
+    if ($order->client_id !== Auth::id() && Auth::user()->role !== 'admin') {
+        abort(403, 'Unauthorized access.');
+    }
+    
+    // Decode special_items
+    if (is_string($order->special_items)) {
+        $order->special_items = json_decode($order->special_items, true) ?? [];
+    }
+    if (!is_array($order->special_items)) {
+        $order->special_items = [];
+    }
+    
+    return view('client.orders.show', compact('order'));
+}
 
     /**
      * Track order status
      */
     public function track(Order $order)
     {
-        // Check if user is logged in
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        // Check if order belongs to authenticated user
         if ($order->client_id !== Auth::id() && Auth::user()->role !== 'admin' && Auth::user()->role !== 'driver') {
             abort(403, 'Unauthorized access.');
         }
@@ -67,17 +80,15 @@ class OrderController extends Controller
         return view('client.orders.track', compact('order'));
     }
 
-     /**
+    /**
      * Generate invoice for an order
      */
     public function invoice(Order $order)
     {
-        // Check if order belongs to authenticated user
         if ($order->client_id !== Auth::id() && Auth::user()->role !== 'admin') {
             abort(403, 'Unauthorized access.');
         }
         
-        // Load relationships
         $order->load(['client', 'basket', 'pickupLocation', 'deliveryLocation']);
         
         $pdf = Pdf::loadView('invoices.order', compact('order'));
@@ -89,14 +100,24 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        // Check if user is logged in
         if (!Auth::check()) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Please login first'], 401);
+            }
             return redirect()->route('login');
         }
 
         $validated = $request->validate([
-            'pickup_location_id' => 'required|exists:locations,id',
-            'delivery_location_id' => 'required|exists:locations,id',
+            'pickup_location_id' => 'nullable|exists:locations,id',
+            'pickup_latitude' => 'nullable|numeric',
+            'pickup_longitude' => 'nullable|numeric',
+            'pickup_address' => 'nullable|string|max:500',
+            'pickup_name' => 'nullable|string|max:255',
+            'delivery_location_id' => 'nullable|exists:locations,id',
+            'delivery_latitude' => 'nullable|numeric',
+            'delivery_longitude' => 'nullable|numeric',
+            'delivery_address' => 'nullable|string|max:500',
+            'delivery_name' => 'nullable|string|max:255',
             'basket_id' => 'required|exists:baskets,id',
             'special_items' => 'nullable|array',
             'special_items.*' => 'exists:special_items,id',
@@ -108,7 +129,6 @@ class OrderController extends Controller
 
         $basket = Basket::findOrFail($request->basket_id);
         
-        // Calculate price
         $subtotal = $basket->base_price;
         $surcharges = 0;
         
@@ -118,34 +138,78 @@ class OrderController extends Controller
         }
         
         $total = $subtotal + $surcharges;
+        
+        if ($request->payment_type === 'prepaid') {
+            $total = $total * 0.95;
+        }
 
         DB::beginTransaction();
         
         try {
+            // Handle pickup location
+            $pickupLocationId = $request->pickup_location_id;
+            if ((!$pickupLocationId || $pickupLocationId === '') && $request->pickup_latitude && $request->pickup_longitude) {
+                $pickupLocation = Location::create([
+                    'user_id' => Auth::id(),
+                    'name' => $request->pickup_name ?: 'Map Location',
+                    'address' => $request->pickup_address ?: 'Address from map',
+                    'latitude' => $request->pickup_latitude,
+                    'longitude' => $request->pickup_longitude,
+                    'is_default' => false,
+                    'contact_phone' => Auth::user()->phone ?? 'N/A',
+                    'contact_email' => Auth::user()->email ?? 'N/A',
+                ]);
+                $pickupLocationId = $pickupLocation->id;
+            }
+            
+            // Handle delivery location
+            $deliveryLocationId = $request->delivery_location_id;
+            if ((!$deliveryLocationId || $deliveryLocationId === '') && $request->delivery_latitude && $request->delivery_longitude) {
+                $deliveryLocation = Location::create([
+                    'user_id' => Auth::id(),
+                    'name' => $request->delivery_name ?: 'Map Location',
+                    'address' => $request->delivery_address ?: 'Address from map',
+                    'latitude' => $request->delivery_latitude,
+                    'longitude' => $request->delivery_longitude,
+                    'is_default' => false,
+                    'contact_phone' => Auth::user()->phone ?? 'N/A',
+                    'contact_email' => Auth::user()->email ?? 'N/A',
+                ]);
+                $deliveryLocationId = $deliveryLocation->id;
+            }
+            
+            if (!$pickupLocationId || !$deliveryLocationId) {
+                throw new \Exception('Both pickup and delivery locations are required.');
+            }
+            
+            // Use 'pickup_scheduled' as the status (this matches your database constraint)
+            $orderStatus = 'pickup_scheduled';
+            
             $order = Order::create([
                 'order_number' => 'ORD-' . strtoupper(uniqid()),
                 'client_id' => Auth::id(),
                 'basket_id' => $basket->id,
-                'pickup_location_id' => $request->pickup_location_id,
-                'delivery_location_id' => $request->delivery_location_id,
+                'pickup_location_id' => $pickupLocationId,
+                'delivery_location_id' => $deliveryLocationId,
                 'subtotal' => $subtotal,
                 'surcharges' => $surcharges,
-                'total' => $total,
+                'total' => round($total, 2),
                 'payment_method' => $request->payment_method,
                 'payment_type' => $request->payment_type,
                 'payment_status' => 'pending',
                 'pickup_scheduled_at' => $request->pickup_scheduled_at,
                 'special_instructions' => $request->special_instructions,
-                'special_items' => $request->special_items ?? [],
-                'status' => 'pickup_scheduled',
+                'special_items' => json_encode($request->special_items ?? []),
+                'status' => $orderStatus,
                 'tracking_history' => json_encode([[
-                    'status' => 'pickup_scheduled',
+                    'status' => $orderStatus,
                     'timestamp' => now()->toDateTimeString(),
-                    'note' => 'Order created'
-                ]])
+                    'note' => 'Order created successfully'
+                ]]),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
-            // If payment method is wallet and has sufficient balance
             if ($request->payment_method === 'wallet' && Auth::user()->wallet) {
                 $wallet = Auth::user()->wallet;
                 if ($wallet->balance >= $total) {
@@ -157,11 +221,26 @@ class OrderController extends Controller
 
             DB::commit();
             
-            return redirect()->route('client.orders.show', $order)
-                           ->with('success', 'Order created successfully!');
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Order created successfully!',
+                    'redirect_url' => route('client.orders.show', $order)
+                ]);
+            }
+            
+            return redirect()->route('client.orders.show', $order)->with('success', 'Order created successfully!');
             
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create order: ' . $e->getMessage()
+                ], 500);
+            }
+            
             return back()->with('error', 'Failed to create order: ' . $e->getMessage())->withInput();
         }
     }
@@ -174,7 +253,8 @@ class OrderController extends Controller
         $request->validate([
             'basket_id' => 'required|exists:baskets,id',
             'special_items' => 'nullable|array',
-            'special_items.*' => 'exists:special_items,id'
+            'special_items.*' => 'exists:special_items,id',
+            'payment_type' => 'nullable|in:prepaid,postpaid'
         ]);
 
         $basket = Basket::findOrFail($request->basket_id);
@@ -186,11 +266,17 @@ class OrderController extends Controller
             $surcharges = $specialItems->sum('surcharge');
         }
         
+        $total = $subtotal + $surcharges;
+        
+        if ($request->payment_type === 'prepaid') {
+            $total = $total * 0.95;
+        }
+        
         return response()->json([
             'success' => true,
             'subtotal' => $subtotal,
             'surcharges' => $surcharges,
-            'total' => $subtotal + $surcharges
+            'total' => round($total, 2)
         ]);
     }
 
@@ -199,17 +285,14 @@ class OrderController extends Controller
      */
     public function cancel(Order $order)
     {
-        // Check if user is logged in
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        // Check if order belongs to authenticated user
         if ($order->client_id !== Auth::id()) {
             abort(403, 'Unauthorized access.');
         }
 
-        // Check if order can be cancelled
         if (!in_array($order->status, ['pickup_scheduled', 'driver_assigned'])) {
             return back()->with('error', 'Order cannot be cancelled at this stage.');
         }
@@ -219,4 +302,5 @@ class OrderController extends Controller
 
         return back()->with('success', 'Order cancelled successfully.');
     }
+    
 }
