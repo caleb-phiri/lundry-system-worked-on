@@ -1,0 +1,124 @@
+{
+  "name": "Laundry Driver Portal",
+  "short_name": "Laundry Driver",
+  "description": "Driver portal for laundry delivery management - track orders, earnings, and schedule",
+  "start_url": "/driver/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "scope": "/driver/",
+  "lang": "en",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Driver Dashboard"
+    },
+    {
+      "src": "/screenshots/dashboard-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Driver Dashboard Mobile"
+    },
+    {
+      "src": "/screenshots/orders-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Orders List"
+    },
+    {
+      "src": "/screenshots/earnings-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Earnings Overview"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Orders",
+      "short_name": "Orders",
+      "description": "View available orders",
+      "url": "/driver/orders",
+      "icons": [{ "src": "/icons/order-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Earnings",
+      "short_name": "Earnings",
+      "description": "Check your earnings",
+      "url": "/driver/earnings",
+      "icons": [{ "src": "/icons/earnings-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Schedule",
+      "short_name": "Schedule",
+      "description": "View your schedule",
+      "url": "/driver/schedule",
+      "icons": [{ "src": "/icons/schedule-icon.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
+}

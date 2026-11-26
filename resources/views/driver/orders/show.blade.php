@@ -1,560 +1,873 @@
 @extends('layouts.driver')
 
 @section('title', 'Order #' . $order->order_number)
-@section('page-title', 'Order Details')
 
 @push('styles')
 <style>
-    :root {
-        --primary: #4361ee;
-        --primary-dark: #3730a3;
-        --primary-light: #e0e7ff;
-        --success: #10b981;
-        --success-light: #d1fae5;
-        --warning: #f59e0b;
-        --warning-light: #fed7aa;
-        --danger: #ef4444;
-        --danger-light: #fee2e2;
-        --info: #3b82f6;
-        --info-light: #dbeafe;
-        --dark: #1e293b;
-        --gray: #64748b;
-        --light: #f8fafc;
-        --border: #e2e8f0;
-    }
+/* Order Detail Specific Styles */
+.order-header {
+    background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%);
+    color: white;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-6);
+    position: relative;
+    overflow: hidden;
+}
 
-    /* Order Header */
+.order-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    transform: rotate(30deg);
+}
+
+.order-number {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.order-status-badge {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.detail-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    transition: all var(--transition-base);
+    height: 100%;
+}
+
+.detail-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-header-custom {
+    padding: var(--space-4) var(--space-6);
+    background: linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-weight: var(--font-weight-semibold);
+}
+
+.card-header-custom i {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary-100);
+    color: var(--color-primary-600);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-base);
+}
+
+.card-body-custom {
+    padding: var(--space-6);
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: var(--space-4);
+    align-items: flex-start;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--color-gray-100);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary-600);
+    margin-right: var(--space-4);
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-1);
+}
+
+.info-value {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-900);
+    line-height: var(--line-height-normal);
+}
+
+.info-value a {
+    color: var(--color-primary-600);
+    text-decoration: none;
+}
+
+.info-value a:hover {
+    text-decoration: underline;
+}
+
+/* Action Buttons */
+.action-btn {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-weight-semibold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border: none;
+    width: 100%;
+    margin-bottom: var(--space-3);
+    transition: all var(--transition-base);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.action-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.action-btn i {
+    font-size: var(--font-size-lg);
+}
+
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.action-btn:disabled::before {
+    display: none;
+}
+
+.btn-accept {
+    background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
+    color: var(--color-white);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-accept:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-collect {
+    background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%);
+    color: var(--color-white);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+.btn-collect:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-deliver {
+    background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
+    color: var(--color-white);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-deliver:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-call {
+    background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-dark) 100%);
+    color: var(--color-white);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-call:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-whatsapp {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    color: var(--color-white);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.btn-whatsapp:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-navigate {
+    background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
+    color: var(--color-white);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.btn-navigate:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Stepper */
+.stepper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin-bottom: var(--space-6);
+}
+
+.stepper::before {
+    content: '';
+    position: absolute;
+    top: 28px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-gray-200);
+    z-index: 1;
+    border-radius: 2px;
+}
+
+.stepper-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    padding: var(--space-4) 0;
+}
+
+.stepper-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-gray-400);
+    background: var(--color-white);
+    border: 3px solid var(--color-gray-200);
+    transition: all var(--transition-base);
+    margin-bottom: var(--space-3);
+    box-shadow: var(--shadow-sm);
+}
+
+.stepper-item.completed .stepper-circle {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: var(--color-white);
+    box-shadow: 0 0 0 6px var(--color-success-light);
+}
+
+.stepper-item.active .stepper-circle {
+    background: var(--color-primary-500);
+    border-color: var(--color-primary-500);
+    color: var(--color-white);
+    box-shadow: 0 0 0 6px var(--color-primary-100);
+    animation: pulse 2s infinite;
+}
+
+.stepper-item.current .stepper-circle {
+    background: var(--color-warning);
+    border-color: var(--color-warning);
+    color: var(--color-white);
+    box-shadow: 0 0 0 6px var(--color-warning-light);
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 var(--color-primary-100); }
+    70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.stepper-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gray-500);
+    text-align: center;
+    white-space: nowrap;
+    max-width: 100px;
+}
+
+.stepper-item.completed .stepper-label,
+.stepper-item.active .stepper-label,
+.stepper-item.current .stepper-label {
+    color: var(--color-gray-900);
+}
+
+.stepper-time {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-400);
+    margin-top: var(--space-1);
+    text-align: center;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding: var(--space-2) 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--color-primary-100), var(--color-gray-200));
+    z-index: 1;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 4rem;
+    margin-bottom: var(--space-5);
+    z-index: 2;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 14px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-white);
+    border: 3px solid var(--color-primary-500);
+    z-index: 3;
+    transition: all var(--transition-base);
+}
+
+.timeline-item.completed .timeline-marker {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    box-shadow: 0 0 0 4px var(--color-success-light);
+}
+
+.timeline-item.active .timeline-marker {
+    background: var(--color-primary-500);
+    border-color: var(--color-primary-500);
+    box-shadow: 0 0 0 4px var(--color-primary-100);
+    animation: pulse 2s infinite;
+}
+
+.timeline-item.current .timeline-marker {
+    background: var(--color-warning);
+    border-color: var(--color-warning);
+    box-shadow: 0 0 0 4px var(--color-warning-light);
+}
+
+.timeline-content {
+    background: var(--color-gray-50);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    transition: all var(--transition-base);
+}
+
+.timeline-item:hover .timeline-content {
+    background: var(--color-white);
+    box-shadow: var(--shadow-sm);
+}
+
+.timeline-time {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    margin-top: var(--space-2);
+}
+
+.timeline-note {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    font-style: italic;
+    margin-top: var(--space-2);
+}
+
+/* Quick Stats */
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.quick-stat {
+    background: var(--color-gray-50);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    text-align: center;
+    transition: all var(--transition-base);
+}
+
+.quick-stat:hover {
+    background: var(--color-white);
+    box-shadow: var(--shadow-sm);
+}
+
+.quick-stat-value {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary-600);
+    line-height: 1;
+    margin-bottom: var(--space-1);
+}
+
+.quick-stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Map Placeholder */
+.map-placeholder {
+    background: linear-gradient(135deg, var(--color-gray-100) 0%, var(--color-gray-200) 100%);
+    height: 150px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-gray-500);
+    font-size: var(--font-size-sm);
+    gap: var(--space-2);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    margin-top: var(--space-4);
+    border: 2px dashed var(--color-gray-300);
+}
+
+.map-placeholder:hover {
+    background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
+    color: var(--color-primary-600);
+    border-color: var(--color-primary-300);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.map-placeholder:focus {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+}
+
+/* Special Items */
+.special-item {
+    background: linear-gradient(135deg, var(--color-warning-light), #fff3cd);
+    color: var(--color-warning-dark);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-right: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+/* Action Card */
+.action-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.action-card .card-header-custom {
+    background: var(--color-gray-50);
+}
+
+.action-earnings {
+    background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+.action-earnings-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-primary-600);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-1);
+}
+
+.action-earnings-value {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary-700);
+}
+
+/* Status Alerts */
+.status-alert {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.status-alert-info {
+    background: var(--color-info-light);
+    color: var(--color-info-dark);
+    border-left: 4px solid var(--color-info);
+}
+
+.status-alert-warning {
+    background: var(--color-warning-light);
+    color: var(--color-warning-dark);
+    border-left: 4px solid var(--color-warning);
+}
+
+.status-alert-success {
+    background: var(--color-success-light);
+    color: var(--color-success-dark);
+    border-left: 4px solid var(--color-success);
+}
+
+/* Share Button */
+.btn-share {
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+    border: 1px solid var(--color-gray-200);
+}
+
+.btn-share:hover:not(:disabled) {
+    background: var(--color-gray-200);
+    color: var(--color-primary-600);
+    border-color: var(--color-primary-300);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
     .order-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 1rem;
-        margin-bottom: 1.5rem;
-        position: relative;
-        overflow: hidden;
+        padding: var(--space-4);
     }
-
-    .order-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        transform: rotate(30deg);
-    }
-
     .order-number {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .order-status-badge {
-        padding: 0.5rem 1rem;
-        border-radius: 2rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        background: rgba(255,255,255,0.2);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.3);
-    }
-
-    /* Cards */
-    .detail-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--border);
-        overflow: hidden;
-        transition: all 0.3s ease;
-        height: 100%;
-        position: relative;
-    }
-
-    .detail-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
-    }
-
-    .card-header-custom {
-        padding: 1rem 1.5rem;
-        background: linear-gradient(135deg, var(--light) 0%, white 100%);
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-weight: 600;
-    }
-
-    .card-header-custom i {
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--primary-light);
-        color: var(--primary);
-        border-radius: 8px;
-        font-size: 0.875rem;
-    }
-
-    .card-body-custom {
-        padding: 1.5rem;
-    }
-
-    /* Info Items */
-    .info-item {
-        display: flex;
-        margin-bottom: 1rem;
+        font-size: var(--font-size-xl);
+        flex-direction: column;
         align-items: flex-start;
+        gap: var(--space-2);
     }
-
+    .card-header-custom {
+        padding: var(--space-3) var(--space-4);
+    }
+    .card-body-custom {
+        padding: var(--space-4);
+    }
+    .info-item {
+        margin-bottom: var(--space-3);
+    }
     .info-icon {
-        width: 32px;
-        height: 32px;
-        background: var(--light);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
-        margin-right: 1rem;
-        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        font-size: var(--font-size-base);
     }
-
-    .info-content {
-        flex: 1;
-    }
-
-    .info-label {
-        font-size: 0.75rem;
-        color: var(--gray);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.25rem;
-    }
-
     .info-value {
-        font-weight: 600;
-        color: var(--dark);
-        line-height: 1.4;
+        font-size: var(--font-size-sm);
     }
-
-    .info-value a {
-        color: var(--primary);
-        text-decoration: none;
-    }
-
-    .info-value a:hover {
-        text-decoration: underline;
-    }
-
-    /* Action Buttons */
     .action-btn {
-        padding: 1rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        border: none;
-        width: 100%;
-        margin-bottom: 0.75rem;
-        transition: all 0.3s;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
+        padding: var(--space-3);
+        font-size: var(--font-size-sm);
     }
-
-    .action-btn::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.3);
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
+    .quick-stats {
+        grid-template-columns: repeat(2, 1fr);
     }
-
-    .action-btn:hover::before {
-        width: 300px;
-        height: 300px;
+    .stepper-circle {
+        width: 44px;
+        height: 44px;
+        font-size: var(--font-size-base);
     }
-
-    .action-btn i {
-        font-size: 1.1rem;
+    .stepper-label {
+        font-size: 10px;
+        max-width: 80px;
     }
-
-    .btn-accept {
-        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .btn-collect {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
-    }
-
-    .btn-deliver {
-        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .btn-call {
-        background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .btn-disabled {
-        background: var(--border);
-        color: var(--gray);
-        cursor: not-allowed;
-        opacity: 0.7;
-    }
-
-    .btn-disabled:hover::before {
-        display: none;
-    }
-
-    /* Timeline */
-    .timeline {
-        position: relative;
-        padding: 0.5rem 0;
-    }
-
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 20px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: linear-gradient(to bottom, var(--primary-light), var(--border));
-        z-index: 1;
-    }
-
     .timeline-item {
-        position: relative;
         padding-left: 3.5rem;
-        margin-bottom: 1.5rem;
-        z-index: 2;
     }
-
-    .timeline-item:last-child {
-        margin-bottom: 0;
-    }
-
     .timeline-marker {
-        position: absolute;
         left: 12px;
         width: 16px;
         height: 16px;
-        border-radius: 50%;
-        background: white;
-        border: 3px solid var(--primary);
-        z-index: 3;
-        transition: all 0.3s;
     }
+}
 
-    .timeline-item.completed .timeline-marker {
-        background: var(--success);
-        border-color: var(--success);
-        box-shadow: 0 0 0 3px var(--success-light);
-    }
-
-    .timeline-item.active .timeline-marker {
-        background: var(--primary);
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px var(--primary-light);
-        animation: pulse 2s infinite;
-    }
-
-    .timeline-item.current .timeline-marker {
-        background: var(--warning);
-        border-color: var(--warning);
-        box-shadow: 0 0 0 3px var(--warning-light);
-    }
-
-    @keyframes pulse {
-        0% { box-shadow: 0 0 0 0 var(--primary-light); }
-        70% { box-shadow: 0 0 0 10px rgba(67, 97, 238, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0); }
-    }
-
-    .timeline-content {
-        background: var(--light);
-        border-radius: 0.75rem;
-        padding: 1rem;
-    }
-
-    .timeline-time {
-        font-size: 0.75rem;
-        color: var(--gray);
-        margin-top: 0.25rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .timeline-note {
-        font-size: 0.75rem;
-        color: var(--gray);
-        font-style: italic;
-        margin-top: 0.25rem;
-    }
-
-    /* Quick Stats */
+@media (max-width: 480px) {
     .quick-stats {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 1rem;
+        grid-template-columns: 1fr;
     }
-
-    .quick-stat {
-        background: var(--light);
-        border-radius: 0.75rem;
-        padding: 0.75rem;
+    .order-status-badge {
+        width: 100%;
         text-align: center;
     }
-
-    .quick-stat-value {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--primary);
-        line-height: 1;
-    }
-
-    .quick-stat-label {
-        font-size: 0.625rem;
-        color: var(--gray);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    /* Map Placeholder */
     .map-placeholder {
-        background: linear-gradient(135deg, var(--light) 0%, var(--border) 100%);
-        height: 150px;
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gray);
-        font-size: 0.875rem;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: all 0.3s;
-        margin-top: 1rem;
+        height: 120px;
+        font-size: var(--font-size-xs);
     }
-
-    .map-placeholder:hover {
-        background: linear-gradient(135deg, var(--border) 0%, var(--light) 100%);
-        color: var(--dark);
+    .stepper::before {
+        top: 22px;
     }
-
-    /* Special Items */
-    .special-item {
-        background: linear-gradient(135deg, var(--warning-light), #fff3cd);
-        color: #856404;
-        padding: 0.25rem 0.75rem;
-        border-radius: 2rem;
-        font-size: 0.75rem;
-        display: inline-block;
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
+    .stepper-circle {
+        width: 40px;
+        height: 40px;
     }
-
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-        .order-header {
-            padding: 1rem;
-        }
-
-        .order-number {
-            font-size: 1.25rem;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-
-        .card-header-custom {
-            padding: 0.75rem 1rem;
-        }
-
-        .card-body-custom {
-            padding: 1rem;
-        }
-
-        .info-item {
-            margin-bottom: 0.75rem;
-        }
-
-        .info-icon {
-            width: 28px;
-            height: 28px;
-            font-size: 0.875rem;
-        }
-
-        .info-value {
-            font-size: 0.875rem;
-        }
-
-        .action-btn {
-            padding: 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .quick-stats {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .timeline-item {
-            padding-left: 3rem;
-        }
-
-        .timeline-marker {
-            left: 10px;
-            width: 14px;
-            height: 14px;
-        }
+    .stepper-label {
+        font-size: 9px;
+        max-width: 70px;
     }
+}
 
-    @media (max-width: 480px) {
-        .quick-stats {
-            grid-template-columns: 1fr;
-        }
-
-        .order-status-badge {
-            width: 100%;
-            text-align: center;
-        }
-
-        .map-placeholder {
-            height: 120px;
-            font-size: 0.75rem;
-        }
+/* Print Styles */
+@media print {
+    .action-btn, .map-placeholder, .btn-share, .sidebar, .navbar-top {
+        display: none !important;
     }
-
-    /* Print Styles */
-    @media print {
-        .action-btn, .map-placeholder {
-            display: none;
-        }
-
-        .detail-card {
-            box-shadow: none;
-            border: 1px solid #ddd;
-        }
-
-        .order-header {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
+    .detail-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        break-inside: avoid;
     }
-
-    /* Loading Animation */
-    .skeleton {
-        background: linear-gradient(90deg, var(--border) 25%, var(--light) 50%, var(--border) 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-        border-radius: 0.5rem;
+    .order-header {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
-
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+    .main-content {
+        margin: 0;
+        padding: 0;
     }
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, var(--color-gray-200) 25%, var(--color-gray-100) 50%, var(--color-gray-200) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--radius-base);
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Ripple Effect for Buttons */
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
+}
 </style>
 @endpush
 
 @section('content')
 <div class="container-fluid py-4">
     <!-- Order Header -->
-    <div class="order-header">
+    <div class="order-header" data-aos="fade-down">
         <div class="order-number">
             <span>Order #{{ $order->order_number }}</span>
             <span class="order-status-badge">
-                <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>
+                <i class="fas fa-circle" style="font-size: 6px;"></i>
                 {{ ucfirst(str_replace('_', ' ', $order->status)) }}
             </span>
         </div>
-        <div class="d-flex flex-wrap gap-3">
-            <div>
-                <i class="far fa-calendar me-2"></i>
-                Placed: {{ $order->created_at->format('M j, Y g:i A') }}
+        <div class="d-flex flex-wrap gap-4 text-primary-100">
+            <div class="d-flex align-items-center gap-2">
+                <i class="far fa-calendar"></i>
+                <span>Placed: {{ $order->created_at->format('M j, Y g:i A') }}</span>
             </div>
             @if($order->pickup_scheduled_at)
-            <div>
-                <i class="far fa-clock me-2"></i>
-                Pickup: {{ $order->pickup_scheduled_at->format('M j, g:i A') }}
+            <div class="d-flex align-items-center gap-2">
+                <i class="far fa-clock"></i>
+                <span>Pickup: {{ $order->pickup_scheduled_at->format('M j, g:i A') }}</span>
+            </div>
+            @endif
+            @if($order->distance_km)
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-route"></i>
+                <span>{{ $order->distance_km }} km</span>
             </div>
             @endif
         </div>
     </div>
 
+    <!-- Workflow Stepper -->
+    @if($order->driver_id == auth()->id() || !$order->driver_id)
+    <div class="card mb-6" data-aos="fade-up">
+        <div class="card-body p-4">
+            <div class="stepper">
+                <div class="stepper-item @if(in_array($order->status, ['driver_assigned', 'pickup_scheduled', 'collected', 'out_for_delivery', 'delivered'])) completed @elseif(!$order->driver_id) @else active @endif">
+                    <div class="stepper-circle">
+                        @if(in_array($order->status, ['driver_assigned', 'pickup_scheduled', 'collected', 'out_for_delivery', 'delivered']))
+                            <i class="fas fa-check"></i>
+                        @else
+                            1
+                        @endif
+                    </div>
+                    <div class="stepper-label">Accept</div>
+                    @if($order->accepted_at)
+                        <div class="stepper-time">{{ \Carbon\Carbon::parse($order->accepted_at)->format('M j, H:i') }}</div>
+                    @endif
+                </div>
+                
+                <div class="stepper-item @if(in_array($order->status, ['pickup_scheduled', 'collected', 'out_for_delivery', 'delivered'])) completed @elseif(in_array($order->status, ['driver_assigned'])) active @else @endif">
+                    <div class="stepper-circle">
+                        @if(in_array($order->status, ['pickup_scheduled', 'collected', 'out_for_delivery', 'delivered']))
+                            <i class="fas fa-check"></i>
+                        @else
+                            2
+                        @endif
+                    </div>
+                    <div class="stepper-label">Pickup</div>
+                    @if($order->collected_at)
+                        <div class="stepper-time">{{ \Carbon\Carbon::parse($order->collected_at)->format('M j, H:i') }}</div>
+                    @endif
+                </div>
+                
+                <div class="stepper-item @if(in_array($order->status, ['out_for_delivery', 'delivered'])) completed @elseif($order->status === 'collected') active @else @endif">
+                    <div class="stepper-circle">
+                        @if(in_array($order->status, ['out_for_delivery', 'delivered']))
+                            <i class="fas fa-check"></i>
+                        @else
+                            3
+                        @endif
+                    </div>
+                    <div class="stepper-label">En Route</div>
+                    @if($order->out_for_delivery_at)
+                        <div class="stepper-time">{{ \Carbon\Carbon::parse($order->out_for_delivery_at)->format('M j, H:i') }}</div>
+                    @endif
+                </div>
+                
+                <div class="stepper-item @if($order->status === 'delivered') completed @elseif($order->status === 'out_for_delivery') active @else @endif">
+                    <div class="stepper-circle">
+                        @if($order->status === 'delivered')
+                            <i class="fas fa-check"></i>
+                        @else
+                            4
+                        @endif
+                    </div>
+                    <div class="stepper-label">Delivered</div>
+                    @if($order->delivery_completed_at)
+                        <div class="stepper-time">{{ \Carbon\Carbon::parse($order->delivery_completed_at)->format('M j, H:i') }}</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="row">
         <!-- Left Column - Main Details -->
         <div class="col-lg-8">
             <!-- Client Information Card -->
-            <div class="detail-card mb-4">
-                <div class="card-header-custom">
+            <x-driver.card class="detail-card mb-4" data-aos="fade-up" data-aos-delay="100">
+                <x-slot name="header">
                     <i class="fas fa-user"></i>
                     Client Information
-                </div>
+                </x-slot>
                 <div class="card-body-custom">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-user"></i>
-                                </div>
+                                <div class="info-icon"><i class="fas fa-user"></i></div>
                                 <div class="info-content">
                                     <div class="info-label">Full Name</div>
                                     <div class="info-value">{{ $order->client->name }}</div>
                                 </div>
                             </div>
                             <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-phone"></i>
-                                </div>
+                                <div class="info-icon"><i class="fas fa-phone"></i></div>
                                 <div class="info-content">
                                     <div class="info-label">Phone Number</div>
                                     <div class="info-value">
-                                        <a href="tel:{{ $order->client->phone }}">{{ $order->client->phone ?? 'N/A' }}</a>
+                                        <a href="tel:{{ $order->client->phone }}"><i class="fas fa-phone-alt me-1"></i>{{ $order->client->phone ?? 'N/A' }}</a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-envelope"></i>
-                                </div>
+                                <div class="info-icon"><i class="fas fa-envelope"></i></div>
                                 <div class="info-content">
                                     <div class="info-label">Email Address</div>
                                     <div class="info-value">
-                                        <a href="mailto:{{ $order->client->email }}">{{ $order->client->email }}</a>
+                                        <a href="mailto:{{ $order->client->email }}"><i class="fas fa-envelope me-1"></i>{{ $order->client->email }}</a>
                                     </div>
                                 </div>
                             </div>
                             <div class="info-item">
-                                <div class="info-icon">
-                                    <i class="fas fa-box"></i>
-                                </div>
+                                <div class="info-icon"><i class="fas fa-box"></i></div>
                                 <div class="info-content">
                                     <div class="info-label">Total Orders</div>
                                     <div class="info-value">{{ $order->client->orders_count ?? 0 }} orders</div>
@@ -563,16 +876,16 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-driver.card>
 
             <!-- Location Details -->
             <div class="row">
                 <div class="col-md-6">
-                    <div class="detail-card mb-4">
-                        <div class="card-header-custom">
-                            <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
+                    <x-driver.card class="detail-card mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <x-slot name="header">
+                            <i class="fas fa-map-marker-alt" style="color: var(--color-primary);"></i>
                             Pickup Location
-                        </div>
+                        </x-slot>
                         <div class="card-body-custom">
                             <h6 class="fw-bold mb-2">{{ $order->pickupLocation->name }}</h6>
                             <p class="text-muted small mb-3">
@@ -602,20 +915,21 @@
                                 @endif
                             </div>
 
-                            <div class="map-placeholder" onclick="openMaps('pickup')">
-                                <i class="fas fa-map-marked-alt"></i>
-                                Open in Google Maps
-                            </div>
+                            <x-driver.map-placeholder 
+                                type="pickup" 
+                                :address="$order->pickupLocation->address"
+                                label="Open Pickup in Maps" 
+                            />
                         </div>
-                    </div>
+                    </x-driver.card>
                 </div>
 
                 <div class="col-md-6">
-                    <div class="detailCard mb-4">
-                        <div class="card-header-custom">
-                            <i class="fas fa-flag-checkered" style="color: var(--success);"></i>
+                    <x-driver.card class="detail-card mb-4" data-aos="fade-up" data-aos-delay="300">
+                        <x-slot name="header">
+                            <i class="fas fa-flag-checkered" style="color: var(--color-success);"></i>
                             Delivery Location
-                        </div>
+                        </x-slot>
                         <div class="card-body-custom">
                             <h6 class="fw-bold mb-2">{{ $order->deliveryLocation->name }}</h6>
                             <p class="text-muted small mb-3">
@@ -637,54 +951,55 @@
                                 </a>
                             </div>
 
-                            <div class="map-placeholder" onclick="openMaps('delivery')">
-                                <i class="fas fa-map-marked-alt"></i>
-                                Open in Google Maps
-                            </div>
+                            <x-driver.map-placeholder 
+                                type="delivery" 
+                                :address="$order->deliveryLocation->address"
+                                label="Open Delivery in Maps" 
+                            />
                         </div>
-                    </div>
+                    </x-driver.card>
                 </div>
             </div>
 
             <!-- Special Instructions -->
             @if($order->special_instructions)
-            <div class="detail-card mb-4">
-                <div class="card-header-custom">
+            <x-driver.card class="detail-card mb-4" data-aos="fade-up" data-aos-delay="400">
+                <x-slot name="header">
                     <i class="fas fa-clipboard-list"></i>
                     Special Instructions
-                </div>
+                </x-slot>
                 <div class="card-body-custom">
                     <div class="alert alert-warning mb-0">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         {{ $order->special_instructions }}
                     </div>
                 </div>
-            </div>
+            </x-driver.card>
             @endif
 
             <!-- Special Items -->
             @if(!empty($order->special_items))
-            <div class="detail-card mb-4">
-                <div class="card-header-custom">
+            <x-driver.card class="detail-card mb-4" data-aos="fade-up" data-aos-delay="500">
+                <x-slot name="header">
                     <i class="fas fa-star"></i>
                     Special Items
-                </div>
+                </x-slot>
                 <div class="card-body-custom">
                     @foreach($order->special_items as $item)
                         <span class="special-item">
-                            <i class="fas fa-tag me-1"></i>
+                            <i class="fas fa-tag"></i>
                             {{ is_array($item) ? ($item['name'] ?? 'Special Item') : 'Special Item' }}
                         </span>
                     @endforeach
                 </div>
-            </div>
+            </x-driver.card>
             @endif
         </div>
 
         <!-- Right Column - Actions & Timeline -->
         <div class="col-lg-4">
             <!-- Quick Stats -->
-            <div class="quick-stats">
+            <div class="quick-stats" data-aos="fade-up" data-aos-delay="100">
                 <div class="quick-stat">
                     <div class="quick-stat-value">{{ $order->basket->capacity_kg ?? 0 }}kg</div>
                     <div class="quick-stat-label">Basket Size</div>
@@ -704,88 +1019,121 @@
             </div>
 
             <!-- Action Card -->
-            <div class="detail-card mb-4">
-                <div class="card-header-custom">
+            <x-driver.card class="action-card mb-4" data-aos="fade-up" data-aos-delay="200">
+                <x-slot name="header">
                     <i class="fas fa-tasks"></i>
                     Actions
-                </div>
+                </x-slot>
                 <div class="card-body-custom">
                     @if(!$order->driver_id)
                         <form action="{{ route('driver.orders.accept', $order) }}" method="POST">
                             @csrf
-                            <button type="submit" class="action-btn btn-accept">
+                            <button type="submit" class="action-btn btn-accept btn-ripple">
                                 <i class="fas fa-check-circle"></i>
                                 Accept This Order
                             </button>
                         </form>
                         <div class="text-center small text-muted">
                             <i class="fas fa-info-circle me-1"></i>
-                            You'll earn K{{ number_format($order->total * 0.2, 2) }} for this delivery
+                            You'll earn <strong>K{{ number_format($order->total * 0.2, 2) }}</strong> for this delivery
                         </div>
                     @endif
 
                     @if($order->driver_id == auth()->id())
-                        @if($order->status == 'driver_assigned' || $order->status == 'pickup_scheduled')
-                            <form action="{{ route('driver.orders.collected', $order) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="action-btn btn-collect">
-                                    <i class="fas fa-box"></i>
-                                    Mark as Collected
-                                </button>
-                            </form>
+                        @if(in_array($order->status, ['driver_assigned', 'pickup_scheduled']))
+                            <div class="d-grid gap-2">
+                                <a href="#" class="action-btn btn-navigate" onclick="openMaps('pickup'); return false;">
+                                    <i class="fas fa-navigation"></i>
+                                    Navigate to Pickup
+                                </a>
+                                <form action="{{ route('driver.orders.collected', $order) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="action-btn btn-collect btn-ripple">
+                                        <i class="fas fa-box"></i>
+                                        Mark as Collected
+                                    </button>
+                                </form>
+                            </div>
                         @endif
 
-                        @if($order->status == 'collected' || $order->status == 'out_for_delivery')
-                            <form action="{{ route('driver.orders.delivered', $order) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="action-btn btn-deliver">
-                                    <i class="fas fa-flag-checkered"></i>
-                                    Mark as Delivered
-                                </button>
-                            </form>
+                        @if($order->status === 'collected')
+                            <div class="d-grid gap-2">
+                                <a href="#" class="action-btn btn-navigate" onclick="openMaps('delivery'); return false;">
+                                    <i class="fas fa-navigation"></i>
+                                    Navigate to Delivery
+                                </a>
+                                <form action="{{ route('driver.orders.out_for_delivery', $order) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="action-btn btn-navigate btn-ripple">
+                                        <i class="fas fa-truck-fast"></i>
+                                        Start Delivery
+                                    </button>
+                                </form>
+                            </div>
                         @endif
 
-                        @if(in_array($order->status, ['driver_assigned', 'pickup_scheduled', 'collected']))
-                            <a href="tel:{{ $order->client->phone }}" class="action-btn btn-call text-decoration-none">
-                                <i class="fas fa-phone"></i>
-                                Call Client
-                            </a>
-                            
-                            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->client->phone) }}" 
-                               class="action-btn btn-call text-decoration-none" 
-                               style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);" 
-                               target="_blank">
-                                <i class="fab fa-whatsapp"></i>
-                                WhatsApp Client
-                            </a>
+                        @if($order->status === 'out_for_delivery')
+                            <div class="d-grid gap-2">
+                                <a href="#" class="action-btn btn-navigate" onclick="openMaps('delivery'); return false;">
+                                    <i class="fas fa-navigation"></i>
+                                    Navigate to Delivery
+                                </a>
+                                <form action="{{ route('driver.orders.delivered', $order) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="action-btn btn-deliver btn-ripple">
+                                        <i class="fas fa-flag-checkered"></i>
+                                        Mark as Delivered
+                                    </button>
+                                </form>
+                            </div>
                         @endif
 
-                        @if($order->status == 'driver_assigned')
-                            <div class="alert alert-warning small mt-3 mb-0">
-                                <i class="fas fa-clock me-2"></i>
+                        @if(in_array($order->status, ['driver_assigned', 'pickup_scheduled', 'collected', 'out_for_delivery']))
+                            <div class="d-grid gap-2 mt-3">
+                                <a href="tel:{{ $order->client->phone }}" class="action-btn btn-call text-decoration-none btn-ripple">
+                                    <i class="fas fa-phone"></i>
+                                    Call Client
+                                </a>
+                                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->client->phone) }}" 
+                                   class="action-btn btn-whatsapp text-decoration-none btn-ripple" 
+                                   target="_blank">
+                                    <i class="fab fa-whatsapp"></i>
+                                    WhatsApp Client
+                                </a>
+                            </div>
+                        @endif
+
+                        @if($order->status === 'driver_assigned')
+                            <div class="status-alert status-alert-warning">
+                                <i class="fas fa-clock"></i>
                                 Please proceed to pickup location
                             </div>
-                        @elseif($order->status == 'collected')
-                            <div class="alert alert-info small mt-3 mb-0">
-                                <i class="fas fa-box me-2"></i>
-                                Head to the laundry facility
+                        @elseif($order->status === 'pickup_scheduled')
+                            <div class="status-alert status-alert-info">
+                                <i class="fas fa-calendar-clock"></i>
+                                Pickup scheduled for {{ $order->pickup_scheduled_at->format('g:i A') }}
                             </div>
-                        @elseif($order->status == 'out_for_delivery')
-                            <div class="alert alert-success small mt-3 mb-0">
-                                <i class="fas fa-truck me-2"></i>
+                        @elseif($order->status === 'collected')
+                            <div class="status-alert status-alert-info">
+                                <i class="fas fa-box"></i>
+                                Items collected. Head to laundry facility.
+                            </div>
+                        @elseif($order->status === 'out_for_delivery')
+                            <div class="status-alert status-alert-success">
+                                <i class="fas fa-truck-fast"></i>
                                 On your way to delivery
                             </div>
                         @endif
                     @endif
                 </div>
-            </div>
+            </x-driver.card>
 
             <!-- Status Timeline -->
-            <div class="detailCard">
-                <div class="card-header-custom">
+            <x-driver.card class="detail-card mb-4" data-aos="fade-up" data-aos-delay="300">
+                <x-slot name="header">
                     <i class="fas fa-history"></i>
                     Order Timeline
-                </div>
+                </x-slot>
                 <div class="card-body-custom">
                     <div class="timeline">
                         @php
@@ -812,7 +1160,7 @@
                                 $timestamp = $history['timestamp'] ?? $history['changed_at'] ?? null;
                                 $note = $history['note'] ?? null;
                             @endphp
-                            <div class="timeline-item {{ $loop->last ? 'current' : 'completed' }}">
+                            <div class="timeline-item completed">
                                 <div class="timeline-marker"></div>
                                 <div class="timeline-content">
                                     <strong>{{ ucfirst(str_replace('_', ' ', $status)) }}</strong>
@@ -849,13 +1197,13 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </x-driver.card>
 
             <!-- Share Progress -->
             @if(in_array($order->status, ['driver_assigned', 'pickup_scheduled', 'collected', 'out_for_delivery']))
-            <div class="detailCard mt-4">
+            <x-driver.card class="detail-card" data-aos="fade-up" data-aos-delay="400">
                 <div class="card-body-custom text-center">
-                    <button class="btn btn-outline-primary w-100 mb-2" onclick="shareProgress()">
+                    <button class="btn btn-share w-100 mb-2" onclick="shareProgress()">
                         <i class="fas fa-share-alt me-2"></i>
                         Share Progress with Client
                     </button>
@@ -863,7 +1211,7 @@
                         Client will receive SMS updates
                     </small>
                 </div>
-            </div>
+            </x-driver.card>
             @endif
         </div>
     </div>
@@ -871,7 +1219,7 @@
 
 @push('scripts')
 <script>
-// Open in Google Maps
+// Open in Maps
 function openMaps(type) {
     let address = type === 'pickup' 
         ? '{{ $order->pickupLocation->address }}'
@@ -881,61 +1229,50 @@ function openMaps(type) {
     
     // Detect if mobile device
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        window.open('geo:0,0?q=' + encodedAddress);
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.open('maps://?q=' + encodedAddress);
+            setTimeout(() => {
+                window.open('https://www.google.com/maps/search/?api=1&query=' + encodedAddress, '_blank');
+            }, 500);
+        } else {
+            window.open('geo:0,0?q=' + encodedAddress);
+        }
     } else {
         window.open('https://www.google.com/maps/search/?api=1&query=' + encodedAddress, '_blank');
     }
+    
+    // Track navigation event
+    if (window.gtag) {
+        gtag('event', 'navigate', { destination: type, order: '{{ $order->order_number }}' });
+    }
 }
 
-// Share progress (simulated)
+// Share progress
 function shareProgress() {
     const status = '{{ ucfirst(str_replace('_', ' ', $order->status)) }}';
     const orderNumber = '{{ $order->order_number }}';
     
-    // Show toast notification
-    showToast('Progress shared with client!');
+    window.toastManager.success('Progress shared with client!', { title: 'Shared' });
     
     // In production, this would trigger an SMS/email to the client
     console.log(`Sharing progress for order ${orderNumber}: ${status}`);
+    
+    // Simulate API call
+    fetch('{{ route('driver.orders.share', $order) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    }).catch(console.error);
 }
 
-// Toast notification
-function showToast(message) {
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.innerHTML = `
-        <div style="position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; animation: slideIn 0.3s ease;">
-            <i class="fas fa-check-circle me-2"></i>
-            ${message}
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
-
-// Add slide animation
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-`;
-document.head.appendChild(style);
-
-// Auto refresh page every 30 seconds for active orders
+// Auto-refresh for active orders
 @if(in_array($order->status, ['driver_assigned', 'pickup_scheduled', 'collected', 'out_for_delivery']))
     let refreshTimer = setTimeout(function() {
         location.reload();
     }, 30000);
     
-    // Clear timer if user navigates away
     window.addEventListener('beforeunload', function() {
         clearTimeout(refreshTimer);
     });
@@ -949,10 +1286,23 @@ document.addEventListener('keydown', function(e) {
         window.location.href = 'tel:{{ $order->client->phone }}';
     }
     
-    // Alt + M to open maps
+    // Alt + M to open maps (pickup)
     if (e.altKey && e.key === 'm') {
         e.preventDefault();
         openMaps('pickup');
+    }
+    
+    // Alt + D to open maps (delivery)
+    if (e.altKey && e.key === 'd') {
+        e.preventDefault();
+        openMaps('delivery');
+    }
+    
+    // Alt + A to accept/collect/deliver
+    if (e.altKey && e.key === 'a') {
+        e.preventDefault();
+        const primaryAction = document.querySelector('.action-btn:not(:disabled)');
+        if (primaryAction) primaryAction.click();
     }
 });
 
@@ -970,6 +1320,43 @@ document.addEventListener('touchend', function(e) {
         location.reload();
     }
 }, false);
+
+// Add ripple effect to action buttons
+document.querySelectorAll('.btn-ripple').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const ripple = document.createElement('span');
+        ripple.style.cssText = `
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            left: ${x}px;
+            top: ${y}px;
+            animation: ripple 0.6s ease-out;
+            pointer-events: none;
+        `;
+        
+        this.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+    });
+});
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
 </script>
 @endpush
 @endsection

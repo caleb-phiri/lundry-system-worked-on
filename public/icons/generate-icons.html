@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PWA Icon Generator</title>
+  <style>
+    body { font-family: system-ui; max-width: 800px; margin: 2rem auto; padding: 1rem; }
+    .size { margin: 1rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+    .size h3 { margin: 0 0 0.5rem; }
+    canvas { border: 1px solid #ccc; background: #fafafa; }
+    button { background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #059669; }
+    .downloads { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    a { color: #10b981; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>PWA Icon Generator</h1>
+  <p>Click "Generate All" to create all required icon sizes from the source SVG.</p>
+  
+  <button onclick="generateAll()">Generate All Icons</button>
+  <button onclick="downloadAll()" style="margin-left: 0.5rem;">Download All</button>
+  
+  <div id="sizes"></div>
+
+  <script>
+    const sizes = [
+      { name: '72x72', width: 72, height: 72 },
+      { name: '96x96', width: 96, height: 96 },
+      { name: '128x128', width: 128, height: 128 },
+      { name: '144x144', width: 144, height: 144 },
+      { name: '152x152', width: 152, height: 152 },
+      { name: '192x192', width: 192, height: 192 },
+      { name: '384x384', width: 384, height: 384 },
+      { name: '512x512', width: 512, height: 512 }
+    ];
+    
+    const svgSource = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <path d="M160 200h192c13.255 0 24-10.745 24-24V128c0-13.255-10.745-24-24-24H160c-13.255 0-24 10.745-24 24v48c0 13.255 10.745 24 24 24zm0 112h192c13.255 0 24-10.745 24-24v-48c0-13.255-10.745-24-24-24H160c-13.255 0-24 10.745-24 24v48c0 13.255 10.745 24 24 24z" fill="white" opacity="0.9"/>
+  <circle cx="256" cy="256" r="80" fill="none" stroke="white" stroke-width="8" opacity="0.5"/>
+  <path d="M256 176v160M176 256h160" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+    
+    const generated = {};
+    
+    function generateAll() {
+      const container = document.getElementById('sizes');
+      container.innerHTML = '';
+      
+      sizes.forEach((size, index) => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.className = 'size';
+          div.innerHTML = `
+            <h3>${size.name}</h3>
+            <canvas id="canvas-${size.name}" width="${size.width}" height="${size.height}"></canvas>
+            <div class="downloads">
+              <a href="#" id="download-${size.name}" download="icon-${size.name}.png">Download PNG</a>
+            </div>
+          `;
+          container.appendChild(div);
+          
+          drawIcon(size);
+        }, index * 100);
+      });
+    }
+    
+    function drawIcon(size) {
+      const canvas = document.getElementById(`canvas-${size.name}`);
+      const ctx = canvas.getContext('2d');
+      
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, size.width, size.height);
+        
+        // Enable download
+        const link = document.getElementById(`download-${size.name}`);
+        link.href = canvas.toDataURL('image/png');
+        link.download = `icon-${size.name}.png`;
+        
+        generated[size.name] = canvas.toDataURL('image/png');
+      };
+      img.src = 'data:image/svg+xml;base64,' + btoa(svgSource);
+    }
+    
+    function downloadAll() {
+      if (Object.keys(generated).length === 0) {
+        alert('Please generate icons first!');
+        return;
+      }
+      
+      sizes.forEach(size => {
+        if (generated[size.name]) {
+          const link = document.createElement('a');
+          link.href = generated[size.name];
+          link.download = `icon-${size.name}.png`;
+          link.click();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
